@@ -101,6 +101,13 @@ BiocManager::install("waldronlab/MicrobiomeWorkshop", build_vignettes=TRUE,
         dependencies=TRUE)
 ```
 
+```{r eval=FALSE}
+# install required packages for MicrobiomeWorkshop
+pkg <- c("HMP2Data", "HMP16SData", "curatedMetagenomicData", "Hmisc", "here", "adespatial")
+BiocManager::install(pkg)
+
+install.packages("/home/rstudio/MicrobiomeWorkshop", repos = NULL, type="source")
+```
 
 Load the workshop package:
 ```{r, eval=FALSE}
@@ -499,7 +506,7 @@ Note that there are `r sum(plot_visits$visits > 40)` samples at visit numbers ov
 
 Here we plot the body sites which samples were taken from for each patient in the MOMS-PI 16S data.
 
-```{r, fig.height=6, fig.width=10}
+```{r, fig.height=6, fig.width=10, eval=FALSE}
 # set up data.frame for UpSetR
 momspi_upset <- aggregate(momspi16S_samp$sample_body_site, by = list(momspi16S_samp$subject_id), table)
 tmp <- as.matrix(momspi_upset[, -1])
@@ -514,7 +521,7 @@ upset(momspi_upset, order.by = 'freq', matrix.color = "blue", text.scale = 2)
 
 Here we plot the body sites which samples were taken from for each patient in the MOMS-PI cytokines data.
 
-```{r}
+```{r eval=FALSE}
 # set up data.frame for UpSetR
 momspiCyto_upset <- aggregate(momspiCyto_samp$sample_body_site, by = list(momspiCyto_samp$subject_id), table)
 tmp <- as.matrix(momspiCyto_upset[, -1])
@@ -545,7 +552,7 @@ The IBD patients only had samples taken from the feces.
 
 Here we plot the body sites which samples were taken from for each patient in the T2D 16S rRNA data.
 
-```{r}
+```{r eval=FALSE}
 # set up data.frame for UpSetR
 T2D_upset <- aggregate(T2D16S_samp$sample_body_site, by = list(T2D16S_samp$subject_id), table)
 tmp <- as.matrix(T2D_upset[, -1])

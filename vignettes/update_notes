@@ -1,0 +1,7 @@
+##### MicrobiomeWorkshop.Rmd 
+- error from code chunks 509/ 524/ 555 
+
+```r
+> tmp <- (tmp > 0) *1
+Error: 'list' object cannot be coerced to type 'double'
+```
