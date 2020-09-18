@@ -7,10 +7,6 @@ output:
     toc: true
     toc_float: false
     toc_depth: 3
-  BiocStyle::pdf_document:
-    toc: true
-    toc_float: false
-    toc_depth: 3
 ---
 
 ```{r setup, include=FALSE}
@@ -21,7 +17,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r message=FALSE, warning=FALSE, eval=FALSE}
 install.packages("BiocManager")
 
-pkg <- c("Bioconductor/AnVIL", "BiocStyle")
+pkg <- c("Bioconductor/AnVIL")
 BiocManager::install(pkg)
 ```
 
@@ -54,6 +50,6 @@ Access output
 ```{r}
 counts <- read.table("TaxonomicCount/metaphlan_species_counts_table.tsv")
 dim(counts)
-head(counts)
+counts
 ```
 

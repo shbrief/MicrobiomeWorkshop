@@ -1,0 +1,56 @@
+---
+title: "Microbiome Analysis - Setup"
+author: "Sehyun Oh"
+date: "`r Sys.Date()`"
+output:
+  BiocStyle::html_document:
+    toc: true
+    toc_float: false
+    toc_depth: 3
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+```
+
+# Setup 
+## Install required packages
+Packages required for MicrobioeWorkshop vignettes: 
+```{r eval=FALSE}
+install.packages("BiocManager")
+
+pkg <- c("HMP2Data", "HMP16SData", "curatedMetagenomicData", "Hmisc", 
+         "here", "adespatial", "BiocStyle")
+BiocManager::install(pkg)
+```
+
+Also some utility packages:
+```{r, cache=FALSE}
+suppressPackageStartupMessages({
+  library(kableExtra)
+  library(magrittr)
+  library(reshape2)
+  library(gridExtra)
+})
+```
+
+
+## Clone MicrobiomeWorkshop repo
+Clone the below GitHub repo in the home directory...
+```{bash eval=FALSE}
+git clone https://github.com/waldronlab/MicrobiomeWorkshop.git
+```
+
+... and install the package from the source.
+```{r}
+install.packages("/home/rstudio/MicrobiomeWorkshop", repos=NULL, type="source")
+```
+
+Source some miscellaneous R scripts for HMP2Data component:
+```{r}
+source(system.file(package="MicrobiomeWorkshop", "vignettes", "CIAPlots.R"))
+```
+
+
+
+
