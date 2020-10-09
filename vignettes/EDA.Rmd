@@ -1,0 +1,119 @@
+---
+title: "EDA"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+suppressPackageStartupMessages({
+  library(curatedMetagenomicData)
+})
+
+```
+
+```{r}
+all <- curatedMetagenomicData("*")
+study <- sapply(all, function(x) {stringr::str_split(x, "\\.") %>% unlist %>% .[1]})
+type <- sapply(all, function(x) {stringr::str_split(x, "\\.") %>% unlist %>% .[2]})
+site <- sapply(all, function(x) {stringr::str_split(x, "\\.") %>% unlist %>% .[3]})
+```
+
+```{r}
+length(unique(study))
+length(unique(type))
+length(unique(site))
+```
+
+```{r}
+unique(type)
+unique(site)
+```
+
+## `marker_abundance.stool` datasets
+```{r}
+x <- grep("marker_abundance.stool", all)
+dataset_list <- all[x]
+```
+
+```{r message=FALSE, warning=FALSE}
+data <- curatedMetagenomicData(dataset_list, dryrun = FALSE)
+```
+
+
+## Subset to common features
+```{r}
+allFeatures <- lapply(data, rownames)
+commonFeatures <- Reduce(intersect, allFeatures) 
+```
+
+```{r}
+# data subset to common features
+data_cf <- lapply(data, function(x) x[commonFeatures,])
+```
+
+```{r fig.width=4, fig.height=3}
+numOfSamples <- sapply(seq_along(data_cf), function(x) ncol(data_cf[[x]]))
+summary(numOfSamples)
+
+hist(numOfSamples, breaks = seq(0, 1000, 5), xlim = c(0, 100))
+```
+
+Remove 1 dataset with <20 samples.
+```{r}
+ind <- which(numOfSamples < 20)
+data_forPCA <- data_cf[-1]
+```
+
+
+## PCA
+```{r}
+## An empty list for PCA results (rotation and variance)
+trainingData_PCA <- vector("list", length(data_forPCA))
+names(trainingData_PCA) <- names(data_forPCA)
+```
+
+```{r}
+n <- 20
+for (i in seq_along(data_forPCA)) {
+  x <- exprs(data_forPCA[[i]])
+  study <- names(data_forPCA)[i]
+  
+  pca_res <- prcomp(t(x))
+  trainingData_PCA[[study]]$rotation <- pca_res$rotation[,1:n]
+  colnames(trainingData_PCA[[study]]$rotation) <- paste0(study, ".PC", c(1:n))
+  eigs <- pca_res$sdev^2
+  pca_summary <- rbind(SD = sqrt(eigs),
+                       Variance = eigs/sum(eigs),
+                       Cumulative = cumsum(eigs)/sum(eigs))
+  trainingData_PCA[[study]]$variance <- pca_summary[,1:n]
+  colnames(trainingData_PCA[[study]]$variance) <- paste0(study, ".PC", c(1:n))
+}
+```
+
+## Clustering
+```{r}
+## Combine all PCs
+allZ_list <- lapply(trainingData_PCA, function(x) x$rotation)
+allZ <- Reduce(cbind, allZ_list)
+all <- t(allZ)   # a matrix of PCs (row) x genes (column)
+# print(paste("Dimension of allZ is", dim(allZ)))   # 13,934 genes x 10,720 PCs
+# saveRDS(allZ, file.path(wd, "allZ.rds"))
+```
+
+```{r}
+## Calculate distance
+res.dist <- factoextra::get_dist(all, method = "spearman")
+## Cut the tree
+res.hcut <- factoextra::hcut(res.dist, k = round(nrow(all)/2.25,0), hc_func = "hclust", 
+                             hc_method = "ward.D", hc_metric = "spearman")
+```
+
+```{r}
+trainingData_PCclusters <- buildAvgLoading(t(all), clustering = FALSE, 
+                                           cluster = res.hcut$cluster, iter.max = 100)
+```
+
+

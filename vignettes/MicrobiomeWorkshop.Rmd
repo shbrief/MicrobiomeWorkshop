@@ -102,8 +102,8 @@ BiocManager::install("waldronlab/MicrobiomeWorkshop", build_vignettes=TRUE,
 ```
 
 ```{r eval=FALSE}
-# install required packages for MicrobiomeWorkshop
-pkg <- c("HMP2Data", "HMP16SData", "curatedMetagenomicData", "Hmisc", "here", "adespatial")
+# install required packages for MicrobiomeWorkshop vignette
+pkg <- c("HMP2Data", "HMP16SData", "curatedMetagenomicData", "Hmisc", "here", "adespatial", "BiocStyle")
 BiocManager::install(pkg)
 
 install.packages("/home/rstudio/MicrobiomeWorkshop", repos = NULL, type="source")
