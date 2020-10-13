@@ -7,9 +7,28 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r}
+suppressPackageStartupMessages({
+  library(AnVIL)
+})
+```
+
+## Inputs for this workflow
+```{r}
+fpath <- "gs://fc-07ee4ddc-5b5b-46f6-bed7-809aa14bb012/IBDMDB/ibdmdb_file_list.txt"
+inputs <- read.table(gsutil_pipe(fpath), sep = "\t")
+inputs
+```
+
+Extract sample names from input file names
+```{r}
+sampleName <- gsub("_R1.fastq.gz", "", basename(inputs$V1))
+```
+
+
 ## Setup correct workspace
 ```{r}
-avworkspace_namespace()
+avworkspace_namespace("waldronlab-terra-rstudio")
 avworkspace_name("mtx_workflow_biobakery_ver3")
 ```
 
@@ -18,6 +37,19 @@ avbucket()
 ```
 
 ## Collect output `.tsv` files
+It seems like that `avworkflow_files` function accesses the most recent job. I can
+specify a specific submission, which can be found using `avworkflow_jobs()`.
+
+```{r}
+avworkflow_jobs()
+```
+
+
+### Available outputs from the current workflow
+- genefamilies_relab   
+- pathabundance_relab    
+- pathcoverage   
+
 ```{r}
 outputs <- avworkflow_files()
 
@@ -25,8 +57,23 @@ ind <- grep(".tsv", outputs$file)
 outputs$file[ind]
 ```
 
+Copy workflow outputs in a file system to apply `make_data`
 ```{r}
-head(outputs[ind,])
+
+```
+
+
+
+
+
+
+
+
+```{r warning=FALSE}
+output_ind <- 63
+output_path <- outputs$path[output_ind]
+res <- read.table(gsutil_pipe(output_path), sep = "\t")
+head(res)
 ```
 
 ```{r warning=FALSE}
