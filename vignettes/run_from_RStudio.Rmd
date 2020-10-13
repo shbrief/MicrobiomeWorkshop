@@ -1,0 +1,48 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Setup correct workspace
+```{r}
+avworkspace_namespace()
+avworkspace_name("mtx_workflow_biobakery_ver3")
+```
+
+```{r}
+avbucket()
+```
+
+## Collect output `.tsv` files
+```{r}
+outputs <- avworkflow_files()
+
+ind <- grep(".tsv", outputs$file)
+outputs$file[ind]
+```
+
+```{r}
+head(outputs[ind,])
+```
+
+```{r warning=FALSE}
+output_name <- "humann_pathabundance_relab_counts.tsv"
+output_ind <- which(outputs$file == output_name)
+output_path <- outputs$path[output_ind]
+
+relab_counts <- read.table(gsutil_pipe(output_path))
+relab_counts
+```
+
+```{r warning=FALSE}
+output_name <- "HSM7J4NY_pathabundance_relab.tsv"
+output_ind <- which(outputs$file == output_name)
+output_path <- outputs$path[output_ind]
+
+HSM7J4NY_abundance <- read.table(gsutil_pipe(output_path), sep = "\t")
+head(HSM7J4NY_abundance)
+```

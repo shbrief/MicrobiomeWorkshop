@@ -67,6 +67,10 @@ ind <- which(numOfSamples < 20)
 data_forPCA <- data_cf[-1]
 ```
 
+```{r echo=FALSE}
+rm(data, data_cf)
+```
+
 
 ## PCA
 ```{r}
