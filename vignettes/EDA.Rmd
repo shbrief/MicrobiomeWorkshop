@@ -41,23 +41,23 @@ x <- grep("marker_abundance.stool", cMD_all)
 dataset_list <- cMD_all[x]
 ```
 
-```{r message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE, eval=FALSE}
 data <- curatedMetagenomicData(dataset_list, dryrun = FALSE)
 ```
 
 
 ## Subset to common features
-```{r}
+```{r eval=FALSE}
 allFeatures <- lapply(data, rownames)
 commonFeatures <- Reduce(intersect, allFeatures) 
 ```
 
-```{r}
+```{r eval=FALSE}
 # data subset to common features
 data_cf <- lapply(data, function(x) x[commonFeatures,])
 ```
 
-```{r fig.width=4, fig.height=3}
+```{r fig.width=4, fig.height=3, eval=FALSE}
 numOfSamples <- sapply(seq_along(data_cf), function(x) ncol(data_cf[[x]]))
 summary(numOfSamples)
 
@@ -65,15 +65,20 @@ hist(numOfSamples, breaks = seq(0, 1000, 5), xlim = c(0, 100))
 ```
 
 Remove 1 dataset with <20 samples.
-```{r}
+```{r, eval=FALSE}
 ind <- which(numOfSamples < 20)
 data_forPCA <- data_cf[-1]
 ```
 
-```{r echo=FALSE}
+```{r echo=FALSE, eval=FALSE}
 save(data_forPCA, file = "~/data/MicrobiomeWorkshop/inst/extdata/data_forPCA.rds")
 rm(data, data_cf)
 ```
+
+```{r echo=FALSE}
+load("~/data/MicrobiomeWorkshop/inst/extdata/data_forPCA.rds")
+```
+
 
 
 ## PCA
@@ -168,4 +173,7 @@ updateNote(PCAmodel) <- note
 save(PCAmodel, file = "~/data/MicrobiomeWorkshop/inst/extdata/PCAmodel_marker_abundance.stool.rds")
 ```
 
+```{r}
+load("~/data/MicrobiomeWorkshop/inst/extdata/PCAmodel_marker_abundance.stool.rds")
+```
 
