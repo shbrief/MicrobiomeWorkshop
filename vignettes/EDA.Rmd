@@ -1,5 +1,7 @@
 ---
 title: "EDA"
+author: "Sehyun Oh"
+date: "`r Sys.Date()`"
 output: html_document
 ---
 
@@ -10,15 +12,16 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 suppressPackageStartupMessages({
   library(curatedMetagenomicData)
+  library(PCAGenomicSignatures)
 })
 
 ```
 
 ```{r}
-all <- curatedMetagenomicData("*")
-study <- sapply(all, function(x) {stringr::str_split(x, "\\.") %>% unlist %>% .[1]})
-type <- sapply(all, function(x) {stringr::str_split(x, "\\.") %>% unlist %>% .[2]})
-site <- sapply(all, function(x) {stringr::str_split(x, "\\.") %>% unlist %>% .[3]})
+cMD_all <- curatedMetagenomicData("*")
+study <- sapply(cMD_all, function(x) {stringr::str_split(x, "\\.") %>% unlist %>% .[1]})
+type <- sapply(cMD_all, function(x) {stringr::str_split(x, "\\.") %>% unlist %>% .[2]})
+site <- sapply(cMD_all, function(x) {stringr::str_split(x, "\\.") %>% unlist %>% .[3]})
 ```
 
 ```{r}
@@ -34,8 +37,8 @@ unique(site)
 
 ## `marker_abundance.stool` datasets
 ```{r}
-x <- grep("marker_abundance.stool", all)
-dataset_list <- all[x]
+x <- grep("marker_abundance.stool", cMD_all)
+dataset_list <- cMD_all[x]
 ```
 
 ```{r message=FALSE, warning=FALSE}
@@ -68,6 +71,7 @@ data_forPCA <- data_cf[-1]
 ```
 
 ```{r echo=FALSE}
+save(data_forPCA, file = "~/data/MicrobiomeWorkshop/inst/extdata/data_forPCA.rds")
 rm(data, data_cf)
 ```
 
@@ -111,13 +115,57 @@ all <- t(allZ)   # a matrix of PCs (row) x genes (column)
 ## Calculate distance
 res.dist <- factoextra::get_dist(all, method = "spearman")
 ## Cut the tree
-res.hcut <- factoextra::hcut(res.dist, k = round(nrow(all)/2.25,0), hc_func = "hclust", 
+res.hcut <- factoextra::hcut(res.dist, k = round(nrow(all)/4,0), hc_func = "hclust", 
                              hc_method = "ward.D", hc_metric = "spearman")
 ```
 
 ```{r}
 trainingData_PCclusters <- buildAvgLoading(t(all), clustering = FALSE, 
                                            cluster = res.hcut$cluster, iter.max = 100)
+```      
+
+Size of each clusters
+```{r fig.width=5, fig.height=4}
+hist(trainingData_PCclusters$size, breaks = seq(0, 20, 1),
+     main = "Distribution of Cluster Sizes",
+     xlab = "Cluster Size", ylab = "Frequency")
+```
+
+```{r}
+## Silhouette Width
+cl <- trainingData_PCclusters$cluster
+silh_res <- cluster::silhouette(cl, res.dist)
+cl_silh_width <- summary(silh_res)$clus.avg.widths
+trainingData_PCclusters$sw <- cl_silh_width  # add silhouette width to the result
+```
+
+
+```{r}
+trainingDatasets <- "cMD"
+note <- "marker_abundance.stool/ dataset with >20 samples"
+```
+
+```{r}
+## Variance Explained from PCA result
+pca_summary <- list()
+for (i in seq_along(trainingData_PCA)) {
+    pca_summary[[i]] <- trainingData_PCA[[i]]$variance
+    names(pca_summary)[i] <- names(trainingData_PCA)[i]
+}
+```
+
+
+```{r}
+PCAmodel <- PCAGenomicSignatures(assays = list(model = as.matrix(trainingData_PCclusters$avgLoading)))
+metadata(PCAmodel) <- trainingData_PCclusters[c("cluster", "size", "k", "n")]
+studies(PCAmodel) <- trainingData_PCclusters$studies
+silhouetteWidth(PCAmodel) <- trainingData_PCclusters$sw
+# metadata(PCAmodel)$MeSH_freq <- MeSH_freq
+trainingData(PCAmodel)$PCAsummary <- pca_summary
+# mesh(PCAmodel) <- trainingData_MeSH
+updateNote(PCAmodel) <- note
+
+save(PCAmodel, file = "~/data/MicrobiomeWorkshop/inst/extdata/PCAmodel_marker_abundance.stool.rds")
 ```
 
 
