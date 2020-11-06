@@ -106,21 +106,71 @@ for (i in seq_along(data_forPCA)) {
 }
 ```
 
-## Clustering
+### Variance Explained
+It seems like that almost 95% of variance is explained within PC7-8. 
+```{r fig.width=5, fig.height=4}
+x <- trainingData_PCA
+
+plot(x[[1]]$variance[2,], type = "l", xlab = "PCs", ylab = "Variance Explained")
+for (i in 2:length(x)) {
+  lines(x[[i]]$variance[2,])
+}
+abline(h = 0.05, col = "red")
+```
+
+## Combine all PCs
 ```{r}
 ## Combine all PCs
 allZ_list <- lapply(trainingData_PCA, function(x) x$rotation)
 allZ <- Reduce(cbind, allZ_list)
 all <- t(allZ)   # a matrix of PCs (row) x genes (column)
-# print(paste("Dimension of allZ is", dim(allZ)))   # 13,934 genes x 10,720 PCs
-# saveRDS(allZ, file.path(wd, "allZ.rds"))
+```
+
+### Subset PCss
+For now, I'm using top 10 PCs based on variance explained.
+```{r}
+ind <- c()
+numOfDataset <- length(trainingData_PCA)
+numOfTopPCs <- 20
+for (i in 1:numOfDataset) {new_ind = c(1:10) + numOfTopPCs*(i-1); ind = c(ind, new_ind)}
+
+all <- t(allZ)[ind,]
+```
+
+
+### Dendrogram
+Here I'm testing the ideal number of clusters.
+
+```{r distinct_colors, echo=FALSE}
+library(RColorBrewer)
+n <- 60
+qual_col_pals = brewer.pal.info[brewer.pal.info$category == 'qual',]
+col_vector = unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
 ```
 
 ```{r}
+m <- "spearman"
+ag <- "ward.D"
+k <- 50
+res.dist.dend <- factoextra::get_dist(all, method = m)
+res.hcut.dend <- factoextra::hcut(res.dist, k = k, hc_funct = "hclust", 
+                                  hc_method = ag, hc_metric = m)
+col <- col_vector[1:res.hcut.dend$nbclust]
+factoextra::fviz_dend(res.hcut.dend, k = k, cex = 0.5, 
+                      rect = TRUE, palette = col,
+                      rect_fill = TRUE, rect_border = col,
+                      main = paste(m, ag, "with k =", k))
+```
+
+### Hierarchical Clustering
+```{r}
 ## Calculate distance
 res.dist <- factoextra::get_dist(all, method = "spearman")
+
 ## Cut the tree
-res.hcut <- factoextra::hcut(res.dist, k = round(nrow(all)/4,0), hc_func = "hclust", 
+# k <- round(nrow(all)/4,0)
+k <- 50
+res.hcut <- factoextra::hcut(res.dist, k = k, hc_func = "hclust", 
                              hc_method = "ward.D", hc_metric = "spearman")
 ```
 
@@ -131,7 +181,7 @@ trainingData_PCclusters <- buildAvgLoading(t(all), clustering = FALSE,
 
 Size of each clusters
 ```{r fig.width=5, fig.height=4}
-hist(trainingData_PCclusters$size, breaks = seq(0, 20, 1),
+hist(trainingData_PCclusters$size, breaks = seq(0, 100, 5),
      main = "Distribution of Cluster Sizes",
      xlab = "Cluster Size", ylab = "Frequency")
 ```
@@ -144,12 +194,6 @@ cl_silh_width <- summary(silh_res)$clus.avg.widths
 trainingData_PCclusters$sw <- cl_silh_width  # add silhouette width to the result
 ```
 
-
-```{r}
-trainingDatasets <- "cMD"
-note <- "marker_abundance.stool/ dataset with >20 samples"
-```
-
 ```{r}
 ## Variance Explained from PCA result
 pca_summary <- list()
@@ -159,6 +203,10 @@ for (i in seq_along(trainingData_PCA)) {
 }
 ```
 
+```{r}
+trainingDatasets <- "cMD"
+note <- "marker_abundance.stool/ dataset with >20 samples"
+```
 
 ```{r}
 PCAmodel <- PCAGenomicSignatures(assays = list(model = as.matrix(trainingData_PCclusters$avgLoading)))
@@ -169,7 +217,10 @@ silhouetteWidth(PCAmodel) <- trainingData_PCclusters$sw
 trainingData(PCAmodel)$PCAsummary <- pca_summary
 # mesh(PCAmodel) <- trainingData_MeSH
 updateNote(PCAmodel) <- note
+```
 
+Resulting model is versoned for different building details. Check the README.md.
+```{r eval=FALSE}
 save(PCAmodel, file = "~/data/MicrobiomeWorkshop/inst/extdata/PCAmodel_marker_abundance.stool.rds")
 ```
 
@@ -177,3 +228,11 @@ save(PCAmodel, file = "~/data/MicrobiomeWorkshop/inst/extdata/PCAmodel_marker_ab
 load("~/data/MicrobiomeWorkshop/inst/extdata/PCAmodel_marker_abundance.stool.rds")
 ```
 
+```{r}
+unique_studies <- sapply(colData(PCAmodel)$studies, length)
+all_studies <- metadata(PCAmodel)$size
+df <- data.frame(unique = unique_studies, all = all_studies)
+df$redundant <- df$all - df$unique
+
+t(df)
+```

@@ -28,6 +28,10 @@ sampleName <- gsub("_R1.fastq.gz", "", basename(inputs$V1))
 
 ## Setup correct workspace
 ```{r}
+gcloud_account("shbrief@gmail.com")
+gcloud_project("waldronlab-terra-rstudio")
+terra <- Terra()
+terra$status()
 avworkspace_namespace("waldronlab-terra-rstudio")
 avworkspace_name("mtx_workflow_biobakery_ver3")
 avbucket()
